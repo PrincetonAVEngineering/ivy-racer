@@ -9,4 +9,5 @@ print(lat)
 print(long)
 r = requests.get(url, auth=('user', 'pass'))
 
-print(r.json())
+results = r.json()
+print(results["snappedPoints"][0])
