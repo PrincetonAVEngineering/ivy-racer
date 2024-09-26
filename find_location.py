@@ -5,3 +5,4 @@ import geocoder
 def get_coordinates():
     g = geocoder.ip('me')
     return g.latlng
+ 
