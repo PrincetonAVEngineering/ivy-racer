@@ -1,3 +1,7 @@
+# do pip3 install geocoder in terminal before running
+
 import geocoder
-g = geocoder.ip('me')
-print(g.latlng)
+
+def get_coordinates():
+    g = geocoder.ip('me')
+    return g.latlng
