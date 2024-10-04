@@ -41,7 +41,7 @@ def coordsToPath(client, start_coordinates, end_coordinates):
     print(f"Path between the two points: {path}")
 
 # Example usage
-api_key = '***REMOVED***'
+api_key = 'YOUR_API_KEY'
 start_address = '35 Palmer Square W, Princeton, NJ'
 end_address = '48 Leavitt Lane, Princeton, NJ'
 
