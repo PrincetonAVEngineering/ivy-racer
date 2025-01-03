@@ -2,6 +2,8 @@ import numpy as np
 import cv2
 from sklearn.cluster import KMeans
 
+CENTER_OFFSET = 15
+
 # Open video capture
 video_path = r"A:\Projects\PAVE\ivy-racer\road.mp4"  # Replace with your video file path
 # For webcam, use:
@@ -14,20 +16,25 @@ if not pipeline.isOpened():
     print("Error: Could not open video.")
     exit()
     
-def region_of_interest(img, vertices):
+def region_of_interest(img, vertices, type='triangle'):
+    if type == 'triangle':
+        mask = np.zeros_like(img)
+        cv2.fillPoly(mask, vertices, 255)
+        masked_image = cv2.bitwise_and(img, mask)
+        return masked_image
+    elif type == 'rectangle':
 
-    mask = np.zeros_like(img)
-    cv2.fillPoly(mask, vertices, 255)
-    masked_image = cv2.bitwise_and(img, mask)
-    return masked_image
-
-def draw_lines(img, lines):
-    if lines is None:
-        return
-    for line in lines:
-        for x1, y1, x2, y2 in line:
-            cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 5)
-
+        mask = np.zeros_like(img)
+        cv2.fillPoly(mask, vertices, 255)
+        masked_image = cv2.bitwise_and(img, mask)
+        return masked_image
+    
+def draw_lines(img, lines, color=(0, 255, 0)):
+        if lines is None:
+            return
+        for line in lines:
+            for x1, y1, x2, y2 in line:
+                cv2.line(img, (x1, y1), (x2, y2), color, 5)
 def get_line_angles(lines):
     if lines is None or len(lines) == 0:
         return None
@@ -65,7 +72,7 @@ def get_most_prominent_lines(lines, num_lines=2):
         return prominent_lines
 
 
-def get_most_prominent_angles(angles, num_angles=2, THREASHOLD=0.1):
+def get_most_prominent_angles(angles, num_angles=2, THREASHOLD=10):
         if angles is None or len(angles) == 0:
             return None
 
@@ -75,13 +82,18 @@ def get_most_prominent_angles(angles, num_angles=2, THREASHOLD=0.1):
         distance_between_clusters = 0
         prominent_angles = None
         count = 42
-        while (distance_between_clusters < THREASHOLD):
+        while (np.abs(distance_between_clusters) < THREASHOLD):
 
             kmeans = KMeans(n_clusters=num_angles, random_state=count)
             kmeans.fit(angles_reshaped)
             
             prominent_angles = kmeans.cluster_centers_.flatten()
-            distance_between_clusters = np.diff(prominent_angles)
+            distance_between_clusters = np.diff(prominent_angles) 
+            if count == 45:
+                break
+            if np.abs(distance_between_clusters) < THREASHOLD:
+                print(angles)
+            print(distance_between_clusters)
             count += 1
 
         # Find indices of angles closest to each cluster center
@@ -111,6 +123,25 @@ def draw_direction(img, direction):
     end_y = int(center_y + arrow_length * np.sin(angle_rad))
     cv2.arrowedLine(img, (center_x, center_y), (end_x, end_y), (0, 0, 255), 3)
 
+
+def extend_lines(lines):
+    if lines is not None:
+            extended_lines = []
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                # Calculate slope and intercept
+                if x2 - x1 != 0:
+                    slope = (y2 - y1) / (x2 - x1)
+                    intercept = y1 - slope * x1
+                    # Extend to bottom of frame
+                    y_bottom = height
+                    x_bottom = int((y_bottom - intercept) / slope)
+                    # Extend to center height
+                    y_center = height // 2
+                    x_center = int((y_center - intercept) / slope)
+                    extended_lines.append([[x_bottom, y_bottom, x_center, y_center]])
+            return extended_lines
+
 try:
     while True:
         # Read frames
@@ -120,7 +151,8 @@ try:
 
         # Use frame directly as color image
         color_image = frame
-
+        original_color_image = color_image.copy()
+        
 
         # Apply sharpening using Laplacian filter
         kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
@@ -131,7 +163,7 @@ try:
         # Get saturation channel
         saturation = hsv[:,:,1]
         # Create mask for high saturation areas
-        high_sat_mask = cv2.threshold(saturation, 100, 255, cv2.THRESH_BINARY)[1]
+        high_sat_mask = cv2.threshold(saturation, 50, 255, cv2.THRESH_BINARY)[1]
         # Apply strong blur to high saturation areas
         blur_amount = (25,25)
         blurred = cv2.GaussianBlur(color_image, blur_amount, 0)
@@ -148,7 +180,7 @@ try:
 
         # Define region of interest
         height, width = edges.shape
-        roi_vertices = [(0, height), (width / 2, height / 2), (width, height)]
+        roi_vertices = [(0, height), (0, height - height // 10), (width / 2 + CENTER_OFFSET, height / 2), (width, height - height // 10), (width, height)]
         roi = region_of_interest(edges, np.array([roi_vertices], np.int32))
 
         # Hough Transform to detect lines
@@ -159,23 +191,7 @@ try:
         prominent_angles, indexes = get_most_prominent_angles(angles)
 
         p_lines = get_most_prominent_lines(lines, num_lines=2)
-
-        if p_lines is not None:
-            extended_lines = []
-            for line in p_lines:
-                x1, y1, x2, y2 = line[0]
-                # Calculate slope and intercept
-                if x2 - x1 != 0:
-                    slope = (y2 - y1) / (x2 - x1)
-                    intercept = y1 - slope * x1
-                    # Extend to bottom of frame
-                    y_bottom = height
-                    x_bottom = int((y_bottom - intercept) / slope)
-                    # Extend to center height
-                    y_center = height // 2
-                    x_center = int((y_center - intercept) / slope)
-                    extended_lines.append([[x_bottom, y_bottom, x_center, y_center]])
-            p_lines = extended_lines
+        p_lines = extend_lines(p_lines)
 
         if p_lines is not None:
             avg_pos = np.mean([[(line[0][0] + line[0][2])/2, (line[0][1] + line[0][3])/2] for line in p_lines], axis=0)
@@ -183,28 +199,30 @@ try:
             avg_pos = np.array([width//2, height//2], dtype=np.float32)
         
         # print(avg_pos)
-        line_to_avg_pos = np.array([[avg_pos[0], avg_pos[1], width // 2, 0]], dtype=np.float32)
-        print(f"line to avg: {line_to_avg_pos}")
-
-        angle_of_avg_pos = get_line_angles([line_to_avg_pos])[0]
+        line_to_avg_pos = np.array([[round(avg_pos[0]), height // 2, width // 2 + CENTER_OFFSET, height]], dtype=np.int32)
         
-        cv2.circle(color_image, (int(avg_pos[0]), int(avg_pos[1])), 10, (255, 0, 0), -1)
+
+        angle_of_avg_pos = get_line_angles([line_to_avg_pos])[0] - 180
+        
+        cv2.circle(original_color_image, (int(avg_pos[0]), int(avg_pos[1])), 10, (255, 0, 0), -1)
 
         road_direction = np.sum(prominent_angles) + 90
-        draw_direction(color_image, angle_of_avg_pos)
+        draw_direction(original_color_image, angle_of_avg_pos)
 
         # Draw lines on the original image
-        draw_lines(color_image, p_lines)
+        draw_lines(original_color_image, p_lines, color=(0, 255, 0))
+        draw_lines(original_color_image, [line_to_avg_pos], color=(0, 0, 255))
 
         # Show images
-        cv2.imshow('Road Detection', color_image)
+        cv2.imshow('Road Detection', original_color_image)
+        cv2.imshow("region of interest", roi)
         # Create video writer if it doesn't exist
         if 'out' not in locals():
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
             out = cv2.VideoWriter('output.mp4', fourcc, 30.0, (width, height))
         
         # Write frame to video
-        out.write(color_image)
+        out.write(original_color_image)
         # Press 'q' to exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
