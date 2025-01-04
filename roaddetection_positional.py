@@ -3,9 +3,10 @@ import cv2
 from sklearn.cluster import KMeans
 
 CENTER_OFFSET = 15
+RECTANGULARITY = 1 / 2
 
 # Open video capture
-video_path = r"A:\Projects\PAVE\ivy-racer\road.mp4"  # Replace with your video file path
+video_path = r"A:\Projects\PAVE\ivy-racer\road2.mp4"  # Replace with your video file path
 # For webcam, use:
 # video_path = 0  # or 1, 2 depending on which camera
 
@@ -135,12 +136,19 @@ def extend_lines(lines):
                     intercept = y1 - slope * x1
                     # Extend to bottom of frame
                     y_bottom = height
-                    x_bottom = int((y_bottom - intercept) / slope)
+                    if slope == 0:
+                        x_bottom = x1
+                    else:
+                        x_bottom = int((y_bottom - intercept) / slope)
                     # Extend to center height
                     y_center = height // 2
-                    x_center = int((y_center - intercept) / slope)
+                    if slope == 0:
+                        x_center = x1
+                    else:
+                        x_center = int((y_center - intercept) / slope)
                     extended_lines.append([[x_bottom, y_bottom, x_center, y_center]])
             return extended_lines
+
 
 try:
     while True:
@@ -150,6 +158,10 @@ try:
             break
 
         # Use frame directly as color image
+        # Rescale frame to 360p while maintaining aspect ratio
+        scale_factor = 360 / frame.shape[0]
+        width = int(frame.shape[1] * scale_factor)
+        frame = cv2.resize(frame, (width, 360), interpolation=cv2.INTER_AREA)
         color_image = frame
         original_color_image = color_image.copy()
         
@@ -180,11 +192,11 @@ try:
 
         # Define region of interest
         height, width = edges.shape
-        roi_vertices = [(0, height), (0, height - height // 10), (width / 2 + CENTER_OFFSET, height / 2), (width, height - height // 10), (width, height)]
+        roi_vertices = [(0, height), (0, int(height - height * RECTANGULARITY)), (width / 2 + CENTER_OFFSET, height / 2), (width, int(height - height * RECTANGULARITY)), (width, height)]
         roi = region_of_interest(edges, np.array([roi_vertices], np.int32))
 
         # Hough Transform to detect lines
-        lines = cv2.HoughLinesP(roi, 1, np.pi / 180, 75, minLineLength=20, maxLineGap=50)
+        lines = cv2.HoughLinesP(roi, 1, np.pi / 180, 100, minLineLength=50, maxLineGap=50)
 
         angles = get_line_angles(lines)
         positions = get_line_positions(lines)
@@ -211,6 +223,7 @@ try:
 
         # Draw lines on the original image
         draw_lines(original_color_image, p_lines, color=(0, 255, 0))
+        draw_lines(original_color_image, lines, color=(255, 0, 0))
         draw_lines(original_color_image, [line_to_avg_pos], color=(0, 0, 255))
 
         # Show images
