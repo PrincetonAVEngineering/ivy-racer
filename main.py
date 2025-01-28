@@ -36,7 +36,14 @@ def get_middle(bounding_box):
     med_point = int(center_x), int(center_y)
     return med_point
 
-    
+# determines if the object is on the left side or right side of the camera
+def determine_object_side(bounding_box, width):
+    med_point = get_middle(bounding_box)
+    if med_point[0] < width / 2:
+        return "right"
+    else:
+        return "left"
+
 def sample_depth_coord(x, y, depth_frame):
     return depth_frame[x][y]
 
@@ -53,6 +60,8 @@ while True:
        
         number_of_people = get_number_of_obj(results[0])
         print("Number of people detected: ", number_of_people, "\n")
+        for box in results[0].boxes:
+            print(determine_object_side(bounding_box=box, width=frame.shape[1])) # this doesn't work exactly but the general idea is the same
         
         # print(annotated_frame)
         white_listed = []
