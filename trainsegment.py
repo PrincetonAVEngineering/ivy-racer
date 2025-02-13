@@ -26,7 +26,7 @@ def show_box(box, ax):
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=2))    
 
-image = cv2.imread('Images/road3.jpg')
+image = cv2.imread('Images/road2.png')
 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
 
@@ -99,4 +99,3 @@ mask = mask.astype(np.uint8)
 
 #cv2.drawContours(blank, contours, -1, (0,0,255), 1)
 #cv2.imshow('Contours Drawn', blank)
-
