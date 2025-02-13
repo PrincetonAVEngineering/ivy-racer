@@ -1,10 +1,13 @@
 import numpy as np
-import torch
 import matplotlib.pyplot as plt
 import cv2 
-
 import torch
 import torchvision
+import sys
+sys.path.append("..")
+
+from segment_anything import sam_model_registry, SamPredictor
+
 
 def show_mask(mask, ax, random_color=False):
     if random_color:
@@ -26,46 +29,65 @@ def show_box(box, ax):
     w, h = box[2] - box[0], box[3] - box[1]
     ax.add_patch(plt.Rectangle((x0, y0), w, h, edgecolor='green', facecolor=(0,0,0,0), lw=2))    
 
-image = cv2.imread('Images/road2.png')
-image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-
-
-
-import sys
-sys.path.append("..")
-from segment_anything import sam_model_registry, SamPredictor
 
 # device config for running sam 
 sam_checkpoint = "sam_vit_h_4b8939.pth"
 model_type = "vit_h"
 device = "mps"
 
+# image margin for point
+BOTTOM_MARGIN = 500
+
 # model set up
 sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
 sam.to(device=device)
 
+'''
 # set up predictor
 predictor = SamPredictor(sam)
 predictor.set_image(image)
+'''
 
-# feed in prompt point
-input_point = np.array([[1000, 3000]])
-input_label = np.array([1])
 
-# shows the point
-plt.figure(figsize=(10,10))
-plt.imshow(image)
-show_points(input_point, input_label, plt.gca())
-plt.axis('on')
-plt.show()  
+def get_masked_frame(image):
+    #image set up
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image_height, image_width, _ = image.shape  # (rows, cols)
+
+    # feed in prompt point into model
+    input_point = np.array([[image_width // 2, image_height - BOTTOM_MARGIN]])
+    input_label = np.array([1])
+
+    # Draw the point as a small circle
+    cv2.circle(image, input_point[0], radius=5, color=(0, 255, 0), thickness=-1)
+
+    return image
+    
+
+
+
+
+
+
+'''
 
 masks, scores, logits = predictor.predict(
     point_coords=input_point,
     point_labels=input_label,
-    multimask_output=True,
+    multimask_output=True, # prints best mask (False) or three masks(True)
 )
 
 masks.shape  # (number_of_masks) x H x W
+best_mask, best_score = sorted(zip(masks, scores), key=lambda x: x[1], reverse=True)[0]
+
+plt.figure(figsize=(10,10))
+plt.imshow(image)
+show_mask(best_mask, plt.gca())
+show_points(input_point, input_label, plt.gca())
+plt.title(f"Best Mask, Score: {best_score:.3f}", fontsize=18)
+plt.axis('off')
+plt.show()  
+
 
 for i, (mask, score) in enumerate(zip(masks, scores)):
     plt.figure(figsize=(10,10))
@@ -75,12 +97,12 @@ for i, (mask, score) in enumerate(zip(masks, scores)):
     plt.title(f"Mask {i+1}, Score: {score:.3f}", fontsize=18)
     plt.axis('off')
     plt.show()  
-  
+  '''
 #print(mask)
 #print(type(mask)) 
 
 # convert bool mask to bin nums
-mask = mask.astype(np.uint8)
+# mask = mask.astype(np.uint8)
 
 
 
