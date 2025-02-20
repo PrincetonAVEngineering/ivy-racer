@@ -10,7 +10,7 @@ import numpy as np
 import cv2
 import pickle
 
-max_distance = 2.0
+max_distance = 999999999
 
 
 # Configure depth and color streams
@@ -54,6 +54,7 @@ try:
         if not depth_frame or not color_frame:
             continue
 
+        
         # Convert frames to numpy arrays
         depth_image = np.asanyarray(depth_frame.get_data())
         color_image = np.asanyarray(color_frame.get_data())
@@ -64,7 +65,7 @@ try:
         mask = (depth_image <= max_distance_in_mm).astype(np.uint8)  # 1 where depth <= max_distance
 
         mask_function = lambda x, y: x * y  
-
+        
         #print(color_image.shape)
         #print(depth_image.shape)
         depth_image = np.power(depth_image, 0.16)
@@ -91,6 +92,8 @@ try:
 
         with open("depth.pkl", "wb") as d:
             pickle.dump(depth_image, d)
+        
+        
 
         # Add exporting the depth_image to depth.pkl
 

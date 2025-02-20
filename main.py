@@ -54,14 +54,14 @@ while True:
         number_of_people = get_number_of_obj(results[0])
         print("Number of people detected: ", number_of_people, "\n")
         
-        # print(annotated_frame)
+        """# print(annotated_frame)
         white_listed = []
         for bounding_box in results[0].boxes:
             x_mid, y_mid = get_middle(bounding_box=bounding_box)
             if sample_depth_coord(x_mid, y_mid, depth_frame=depth_image) <= 2.0:
                 white_listed.append(bounding_box)
         
-        results[0].boxes = white_listed
+        results[0].boxes = white_listed"""
 
         annotated_frame = results[0].plot()
 

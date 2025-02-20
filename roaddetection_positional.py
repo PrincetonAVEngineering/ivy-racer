@@ -6,7 +6,7 @@ CENTER_OFFSET = 15
 RECTANGULARITY = 1 / 2
 
 # Open video capture
-video_path = r"A:\Projects\PAVE\ivy-racer\road2.mp4"  # Replace with your video file path
+video_path = r"A:\Projects\PAVE\ivy-racer\road4.mp4"  # Replace with your video file path
 # For webcam, use:
 # video_path = 0  # or 1, 2 depending on which camera
 
