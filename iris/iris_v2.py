@@ -4,7 +4,7 @@ Assumptions: Only the ultrasonic sensor affects steering direction.
 Outputs: a target steering angle.
 """
 
-from  roaddetection_angular import get_lines
+import pyserial
 import cv2
 import numpy as np
 
@@ -12,7 +12,6 @@ import numpy as np
 class Iris:
     def __init__(self):
         self.road_lines = [] #
-        self.video_feed =  cv2.VideoCapture(0) # Can change this to a video.
         self.angle = 0
         self.ABSOLUTE_MAX_ULTRASONIC_ANGLE = np.pi / 4 # 45 degrees.
         self.NUMBER_OF_STEPS = 10 # 10 steps per range of 2 * ABSOLUTE_MAX_ULTRASONIC_ANGLE
