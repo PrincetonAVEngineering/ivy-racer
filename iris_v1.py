@@ -11,7 +11,7 @@ import cv2
 class Iris:
     def __init__(self):
         self.road_lines = [] #
-        self.video_feed =  cv2.VideoCapture(0)
+        self.video_feed =  cv2.VideoCapture(0) # Can change this to a video.
         self.angle = 0
         
 
