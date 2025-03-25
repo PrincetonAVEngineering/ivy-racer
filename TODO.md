@@ -1,7 +1,15 @@
-Things to do:
+# Things to do:
 
-1. Create a function called get_lines(frame), which performs everything this script
-   does, but returns the results instead of just plotting them.
-2. Use compute_angle_v1.py to read in the video from road.mp4 and pass each frame into the roaddetection_angular.py
-   function.
-3. Create a basic steering solution based on the location of the intersection of the lines.
+### Controller -- Arduino side:
+
+1. Work with the controller python team to determine a communication protocol between the arduino and computer.
+2. Create an echo program, which echos the values that are sent in through Serial in.
+3. Implement the communication protocol with the ultrasonic sensor program. Confirm that this data is received and read by the computer.
+4. Implement both step 2 and 3 to run concurrently.
+5. Write different voltages to output pins react to different throttles.
+
+---
+
+1. Research and create a program to control the stepper motor. The stepper motor controller is 2SY556-A controller. Here's a link:
+
+- https://www.amazon.com/dp/B0CX93RXP2?ref=ppx_yo2ov_dt_b_fed_asin_title

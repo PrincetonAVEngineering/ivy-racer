@@ -1,4 +1,13 @@
 
+"""
+TODO: 
+1. Add customization for the get_lines_from_frame function. Should have variable threashold.
+2. Add a better filtering system. 
+   - Remove lines that are horizontal and other impossible combinations.
+   - Add a y displacement to the mask
+3. 
+"""
+
 
 import numpy as np
 import cv2
