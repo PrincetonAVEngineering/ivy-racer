@@ -23,6 +23,7 @@ class Iris:
             should minimally
             1. Use the controller class to receive input from the arduino. Can add a template input 
                 if the controller class is unimplemented.
+            2. Calculate the angle of each step. Step zero should be -ABSOLUTE_MAX_ULTRASONIC_ANGLE and step NUMBER_OF_STEPS should be ABSOLUTE_MAX_ULTRASONIC_ANGLE
             2. Create a function that steers AWAY from close inputs. If the obstacle is dead ahead, it should prioritize moving away to the right side.
              - The obstacle can take up multiple dots / steps in the sensors output.
             
@@ -32,6 +33,3 @@ class Iris:
 
     def get_steering_angle(self):
         return self.angle 
-
-
-    
