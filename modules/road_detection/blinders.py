@@ -2,10 +2,10 @@ import tensorflow as tf
 import cv2
 import numpy as np
 
-model = tf.keras.models.load_model("lane_detection1.keras")
+model = tf.keras.models.load_model("lane_detection2.keras")
 
 # Open the default camera
-cam = cv2.VideoCapture("Bike Path.mp4")
+cam = cv2.VideoCapture("road2.mp4")
 # cam = cv2.VideoCapture(0)
 
 while True:
