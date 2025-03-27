@@ -2,7 +2,7 @@ import tensorflow as tf
 import cv2
 import numpy as np
 
-model = tf.keras.models.load_model("lane_detection2.keras")
+model = tf.keras.models.load_model("blinders.keras")
 
 # Open the default camera
 cam = cv2.VideoCapture("road2.mp4")
