@@ -1,5 +1,5 @@
 """
-Iris V1.
+Iris V3.
 Assumptions: Only the road direction affects steering direction.
 
 Functionality, identical to iris_v1, but using the blinders lane_detection model to pre-process the image

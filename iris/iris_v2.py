@@ -1,5 +1,5 @@
 """
-Iris V1.
+Iris V2.
 Assumptions: Only the ultrasonic sensor affects steering direction.
 Outputs: a target steering angle.
 """
