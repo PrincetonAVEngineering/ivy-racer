@@ -11,9 +11,10 @@ import cv2
 class Iris:
     def __init__(self):
         self.road_lines = [] #
-        self.video_feed =  cv2.VideoCapture("/data/road.mp4")
+        self.video_feed =  cv2.VideoCapture(0)
         self.frame = ''
         self.angle = 0
+        self.cooked_counter = 0
 
     #Just show the frame - not used in algorithm
     def _display_feed(self):
@@ -44,12 +45,9 @@ class Iris:
         cv2.destroyAllWindows()
         
     def get_frame(self):
-        ret, self.frame = self.video_feed.read()
-        if not ret:
-            print("you're cooked")
-            return
+        _, self.frame = self.video_feed.read()
+        
     
-
     def update(self):
         """
             This function represents 1 frame update. During this update, this function
@@ -63,53 +61,63 @@ class Iris:
 
             Additionally: visualize the frame with the lines and intersection point using cv2.
         """
-        self.get_frame(self) # sets self.frame to new frame
-
-        # Step 2: Get road lines and intersection point
-        lines, p_lines, intersection_point = get_lines_from_frame(self.frame)
-        self.road_lines = lines
-        self.prominent_lines = p_lines
-        self.intersection_point = intersection_point
-
-        # Step 3: Calculate steering angle from x deviation
-        frame_width = self.frame.shape[1]
-        center_x = frame_width // 2
-
-        if intersection_point is not None:
-            x, _ = intersection_point
-            deviation = (x - center_x) / frame_width
-            self.angle = deviation * 45  # Mapping to ±45 degrees
-        else:
-            self.angle = 0  # Go straight if no intersection
-
-        # Step 4: Visualize everything
-        annotated_frame = self.frame.copy()
-
-        if p_lines is not None:
-            for line in p_lines:
-                x1, y1, x2, y2 = line[0]
-                cv2.line(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-
-        if intersection_point is not None:
-            x, y = map(int, intersection_point)
-            cv2.circle(annotated_frame, (x, y), 6, (0, 0, 255), -1)
-
-        # Show angle on screen
-        cv2.putText(annotated_frame, f"Steering Angle: {self.angle:.2f} deg", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-
-        cv2.imshow("Iris View", annotated_frame)
-        cv2.waitKey(1)
+        while True:
         
-        pass
+            self.get_frame() # sets self.frame to new frame
+
+            # Step 2: Get road lines and intersection point
+            lines, p_lines, intersection_point = get_lines_from_frame(self.frame)
+            self.road_lines = lines
+            self.prominent_lines = p_lines
+            self.intersection_point = intersection_point
+
+            # Step 3: Calculate steering angle from x deviation
+            frame_width = self.frame.shape[1]
+            center_x = frame_width // 2
+
+            if(intersection_point[0] is None):
+                self. cooked_counter += 1
+                if(self.cooked_counter == 90):
+                    print("we're so cooked")
+                    break
+                print('cooked counter', self.cooked_counter)
+                continue
+            
+            self.cooked_counter = 0
+            if intersection_point is not None:
+                x, _ = intersection_point
+                deviation = (x - center_x) / frame_width
+                self.angle = deviation * 45  # Mapping to ±45 degrees
+            else:
+                self.angle = 0  # Go straight if no intersection
+
+            # Step 4: Visualize everything
+            annotated_frame = self.frame.copy()
+
+            if p_lines is not None:
+                for line in p_lines:
+                    x1, y1, x2, y2 = line[0]
+                    cv2.line(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+            if intersection_point is not None:
+                x, y = map(int, intersection_point)
+                cv2.circle(annotated_frame, (x, y), 6, (0, 0, 255), -1)
+
+            # Show angle on screen
+            cv2.putText(annotated_frame, f"Steering Angle: {self.angle:.2f} deg", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+            cv2.imshow("Iris View", annotated_frame)
+            cv2.waitKey(1)
+        
 
     def get_steering_angle(self):
         return self.angle
-
-
+    
+        
 def main():
     iris = Iris()
-    iris._display_feed()
+    iris.update()
     
 
 if __name__ == '__main__':
