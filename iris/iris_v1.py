@@ -9,12 +9,16 @@ import cv2
 
 
 class Iris:
-    def __init__(self):
+    def __init__(self, video_path):
         self.road_lines = [] #
-        self.video_feed =  cv2.VideoCapture(0)
+        self.video_feed =  cv2.VideoCapture(video_path)
         self.frame = ''
         self.angle = 0
         self.cooked_counter = 0
+        self.previous_angles = []
+        self.angle_bias = 25 #bias term just in case camera isn't centered (in pixels)
+        #bias term for road.mp4 is 25
+        #road2.mp4 is cooked w/ this code (right railing interfering)
 
     #Just show the frame - not used in algorithm
     def _display_feed(self):
@@ -46,7 +50,22 @@ class Iris:
         
     def get_frame(self):
         _, self.frame = self.video_feed.read()
+    
+    #for debug purposes
+    def _play_video(self):
+        """Function to play the video from self.video_feed."""
+        while True:
+            ret, frame = self.video_feed.read()
+            if not ret:
+                print("End of video or error.")
+                break
+            
+            cv2.imshow("Video Playback", frame)
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                break
         
+        self.video_feed.release()
+        cv2.destroyAllWindows()
     
     def update(self):
         """
@@ -93,10 +112,17 @@ class Iris:
 
             # Step 4: Visualize everything
             annotated_frame = self.frame.copy()
-
+            #Resize image for to dimensions that function resized it to to find lines
+            
+            scale_factor = 360 / self.frame.shape[0]
+            width = int(self.frame.shape[1] * scale_factor)
+            
+            annotated_frame = cv2.resize(annotated_frame, (width, 360), interpolation=cv2.INTER_AREA)
             if p_lines is not None:
                 for line in p_lines:
                     x1, y1, x2, y2 = line[0]
+                    
+                    
                     cv2.line(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
             if intersection_point is not None:
@@ -104,7 +130,25 @@ class Iris:
                 cv2.circle(annotated_frame, (x, y), 6, (0, 0, 255), -1)
 
             # Show angle on screen
-            cv2.putText(annotated_frame, f"Steering Angle: {self.angle:.2f} deg", (10, 30),
+            center_x = width // 2
+            
+
+            if intersection_point is None or intersection_point[0] is None:
+                continue
+            else:
+                x_intersect, _ = intersection_point
+                x_intersect -= self.angle_bias
+                deviation = (x_intersect - center_x) / width
+                self.steering_angle = deviation * 45
+                
+                
+            #5 frame moving average to reduce variance -> still not perfect -> straight line has 2 degrees off    
+            self.previous_angles.append(self.angle)
+            if len(self.previous_angles) > 5:
+                self.previous_angles.pop(0)
+            self.angle = sum(self.previous_angles) / len(self.previous_angles)
+            
+            cv2.putText(annotated_frame, f"Steering Angle: {self.steering_angle:.2f} deg", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
 
             cv2.imshow("Iris View", annotated_frame)
@@ -116,7 +160,9 @@ class Iris:
     
         
 def main():
-    iris = Iris()
+    video_path = '../data/road2.mp4'
+    iris = Iris(video_path)
+    #iris._play_video()
     iris.update()
     
 

@@ -14,7 +14,7 @@ import cv2
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
 
-CENTER_OFFSET = 15
+CENTER_OFFSET = 0
 RECTANGULARITY = 0.1 / 2
 
 
