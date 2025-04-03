@@ -97,7 +97,7 @@ class Iris:
             if(intersection_point[0] is None):
                 self. cooked_counter += 1
                 if(self.cooked_counter == 90):
-                    print("we're so cooked")
+                    print("we're so cooked") # lmao tomasz
                     break
                 print('cooked counter', self.cooked_counter)
                 continue
@@ -144,7 +144,7 @@ class Iris:
                 
             #5 frame moving average to reduce variance -> still not perfect -> straight line has 2 degrees off    
             self.previous_angles.append(self.angle)
-            if len(self.previous_angles) > 5:
+            if len(self.previous_angles) > 100:
                 self.previous_angles.pop(0)
             self.angle = sum(self.previous_angles) / len(self.previous_angles)
             
@@ -160,7 +160,7 @@ class Iris:
     
         
 def main():
-    video_path = '../data/road2.mp4'
+    video_path = fr'data\road.mp4'
     iris = Iris(video_path)
     #iris._play_video()
     iris.update()
