@@ -18,6 +18,7 @@ class ArduinoController:
     #a1a2 -> 00 (angle)
     #b1 -> direction of angle (0 for clockwise 1 for counter clockwise)
     #c2c3c4c5 -> magnitude of angle
+    
     #d1d2 -> 01 (throttle)
     #e1e2e3e4e5e6 -> (throttle magnitude)
     
@@ -25,17 +26,6 @@ class ArduinoController:
     # before and after our bytestring, but it also automatically decodes on the receiving side)
     
     
-    
-    
-    
-    #ALEXEI PROTOCOL (3 bytes b/c arduino reads one byte at a time)
-    #abx1x2x3x4x5x6c1c2c3c4c5c6c7c8
-        
-    #a -> 0 angle, 1 throttle
-    #b -> 0 clockwise, 1 counterclockwise (only matters for angle)
-    #x1...x6 -> padding
-    #c1...c8 -> 1 byte for actual val of either angle or throttle
-
 
 
     def __init__(self, port: str, baud_rate: int = 9600):
@@ -112,10 +102,10 @@ class ArduinoController:
         
         #for testing
         first_byte = (self.angle_direction << 5) | (self.angle & 0x1F)
-        second_byte = (0x01 << 6) | (self.throttle & 0x3F)
+        #second_byte = (0x01 << 6) | (self.throttle & 0x3F)
         
         # 1 bit + 7 bits of 0s
-        message = bytes([first_byte, second_byte])
+        message = bytes([first_byte])
         
         bit_string = ' '.join(format(byte, '08b') for byte in message)
         print('sending:', bit_string)
@@ -128,54 +118,42 @@ class ArduinoController:
 
     def receive_data(self):
         
-        try:
-            # Check if data is available to read
-            if self.serial_connection.in_waiting > 0:
-                # Read data from the Arduino (assuming you're expecting 3 bytes)
-                data = self.serial_connection.read(2)
-
-                # Convert the received data to a list of individual bytes
-                byte_data = [byte for byte in data]
-
-                print(f"Received raw byte data: {byte_data}")
-                
-                # Optionally, process the data as needed
-                # Assuming you expect 3 bytes as per the structure in the message
-                # DATA TO EXTRACT
-                #angle_direction = (byte_data[0] >> 7) & 0x01  # Extract the direction bit
-                #angle = byte_data[0] & 0x7F  # Extract the angle (7 bits)
-                #throttle = byte_data[1] & 0x3F  # Extract throttle (6 bits)
-
-                # Print the decoded values
-                print(f"Decoded Data:")
-                print(f"  Angle Direction: {'Counterclockwise' if angle_direction == 1 else 'Clockwise'}")
-                print(f"  Angle: {angle}")
-                print(f"  Throttle: {throttle}")
-
-        except serial.SerialException as e:
-            print(f"Error while reading data: {e}")
-    
+        if self.serial_connection and self.serial_connection.is_open:
+            print('inside here')
+            time.sleep(1)
+            try:
+                if self.serial_connection.in_waiting > 0:
+                    print('inside double here')
+                    data = self.serial_connection.read(1)  # Read a single byte
+                    if data:
+                        print(f"Received byte from Arduino: {data} ({format(ord(data), '08b')})")
+                        return data
+            except Exception as e:
+                print(f"Failed to receive data from Arduino: {e}")
+                return None
+        else:
+            print("Cannot receive data. No active serial connection.")
+            return None
+        
     
     
 
 def test_arduino_controller():
     # Adjust this to your actual port (e.g., 'COM3' on Windows or '/dev/ttyUSB0' on Linux/Mac)
-    port = '/dev/ttyUSB0'  # Replace with your real port
+    port = '/dev/tty.usbmodem11301' # Replace with your real port
 
     arduino = ArduinoController(port)
     #arduino.connect()
-
+    arduino.connect()
+    
     arduino.set_angle(0)
     arduino.set_throttle(0)
     arduino.set_angle_direction(1)
-    print(arduino.angle_direction)
     arduino.send_data()
-
+    arduino.receive_data()
+    #arduino.disconnect()
     # Optionally receive response
     time.sleep(1)
-    #arduino.receive_data()
-
-    #arduino.disconnect()
 
 if __name__ == "__main__":
     test_arduino_controller()
