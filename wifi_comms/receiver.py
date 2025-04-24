@@ -1,6 +1,8 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/receive', methods=['POST'])
 def receive_data():
@@ -13,7 +15,11 @@ def receive_data():
     print(f"Received data: {data}")
 
     # Respond to the sender
-    return jsonify({"message": "Data received successfully", "received_data": data}), 200
+    return jsonify({"success": "All Gucci"}), 200
+
+@app.route('/test', methods=['GET'])
+def test():
+    return render_template("test.html")
 
 if __name__ == '__main__':
     # Run the Flask server
