@@ -43,11 +43,12 @@ class ArduinoController:
         self.serial_connection = None  # Placeholder for the serial connection object
 
     def connect(self):
-        
         try:
             self.serial_connection = serial.Serial(self.port, self.baud_rate, timeout=1)
-            if self.serial_connection.is_open:
-                print(f"Connected to Arduino on {self.port} at {self.baud_rate} baud.")
+            self.serial_connection.setDTR(False)  # Prevent auto-reset
+            time.sleep(1)
+            self.serial_connection.flushInput()
+            print(f"Connected to Arduino on {self.port} at {self.baud_rate} baud.")
         except serial.SerialException as e:
             print(f"Failed to connect to {self.port}: {e}")
 
@@ -89,7 +90,7 @@ class ArduinoController:
 
 
 
-    def send_data(self):
+    def send_data(self, debug=False, byte=None):
         """
         Send the current angle and throttle values to the Arduino.
         """
@@ -101,6 +102,15 @@ class ArduinoController:
         # framing bits — just like the Arduino does on its end.
         
         #for testing
+        
+        if debug:
+            if self.serial_connection and self.serial_connection.is_open:
+                bit_string = ' '.join(format(b, '08b') for b in byte)
+                print('sending arduino following message', bit_string)
+                
+                self.serial_connection.write(byte)
+            return
+        
         first_byte = (self.angle_direction << 5) | (self.angle & 0x1F)
         #second_byte = (0x01 << 6) | (self.throttle & 0x3F)
         
@@ -108,25 +118,28 @@ class ArduinoController:
         message = bytes([first_byte])
         
         bit_string = ' '.join(format(byte, '08b') for byte in message)
-        print('sending:', bit_string)
+        #print('sending:', bit_string)
         
         
         if self.serial_connection and self.serial_connection.is_open:
-           
+           print('sending arduino following message', bit_string)
            self.serial_connection.write(message)
 
 
     def receive_data(self):
         
         if self.serial_connection and self.serial_connection.is_open:
-            print('inside here')
-            time.sleep(1)
+            #print('inside here')
             try:
-                if self.serial_connection.in_waiting > 0:
-                    print('inside double here')
+                #print('inside before')
+                if self.serial_connection.in_waiting:
+                    print('bytes waiting', self.serial_connection.in_waiting)
+                    #print('inside double here')
                     data = self.serial_connection.read(1)  # Read a single byte
                     if data:
-                        print(f"Received byte from Arduino: {data} ({format(ord(data), '08b')})")
+                        bit_string = format(ord(data), '08b')
+                        print(f'Sent data: {bit_string}')
+                        #print(f"Received byte from Arduino: {data} ({format(ord(data), '08b')})")
                         return data
             except Exception as e:
                 print(f"Failed to receive data from Arduino: {e}")
@@ -136,11 +149,38 @@ class ArduinoController:
             return None
         
     
-    
+    def interactive_communication(self):
+        while True:
+            user_input = input("Enter 8 bits (e.g., '01010101') to send to Arduino (or 'exit' to quit): ")
+            
+            if user_input.lower() == 'exit':
+                print("Exiting interactive mode.")
+                break
+            
+            if len(user_input) != 8 or not all(bit in '01' for bit in user_input):
+                print("Invalid input. Please enter exactly 8 bits (e.g., '01010101').")
+                continue
+
+            # Convert the 8-bit binary string to a byte
+            byte_data = int(user_input, 2).to_bytes(1, byteorder='big')
+            
+            # Send the byte to the Arduino
+            self.send_data(debug=True, byte=byte_data)
+            
+            # Wait for a response from the Arduino
+            response = self.receive_data()
+            
+            if response:
+                print(f"Arduino echoed back: {format(ord(response), '08b')}")
+            else:
+                print("No response from Arduino.")
+
+
+
 
 def test_arduino_controller():
     # Adjust this to your actual port (e.g., 'COM3' on Windows or '/dev/ttyUSB0' on Linux/Mac)
-    port = '/dev/tty.usbmodem11301' # Replace with your real port
+    port = '/dev/tty.usbmodem1101' # Replace with your real port
 
     arduino = ArduinoController(port)
     #arduino.connect()
@@ -150,10 +190,15 @@ def test_arduino_controller():
     arduino.set_throttle(0)
     arduino.set_angle_direction(1)
     arduino.send_data()
+    #time.sleep(10000)
     arduino.receive_data()
     #arduino.disconnect()
     # Optionally receive response
-    time.sleep(1)
 
 if __name__ == "__main__":
-    test_arduino_controller()
+    port = '/dev/tty.usbmodem1101' 
+    arduino = ArduinoController(port)
+    #arduino.connect()
+    arduino.connect()
+    arduino.interactive_communication()
+    #test_arduino_controller() 
