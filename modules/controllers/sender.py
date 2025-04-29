@@ -20,7 +20,7 @@ class ArduinoSender:
         if self.serial_connection and self.serial_connection.is_open:
             self.serial_connection.write(byte_data)
             bit_string = format(ord(byte_data), '08b')
-            print(f'Received data: {bit_string}')
+            print(f'Sent data: {bit_string}')
 
     def interactive_input(self):
         while True:
