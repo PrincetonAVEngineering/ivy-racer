@@ -6,6 +6,9 @@ Outputs: a target steering angle.
 
 from  roaddetection_angular import get_lines_from_frame
 import cv2
+from modules.controllers.sender import ArduinoSender
+import math
+import time
 
 
 class Iris:
@@ -16,7 +19,11 @@ class Iris:
         self.angle = 0
         self.cooked_counter = 0
         self.previous_angles = []
-        self.angle_bias = 25 #bias term just in case camera isn't centered (in pixels)
+        self.angle_bias = 35 #bias term just in case camera isn't centered (in pixels)
+        self.sender = ArduinoSender("COM5")
+        self.sender.connect()
+        self.send_counter = 0
+        self.previous_angle_ints = []
         #bias term for road.mp4 is 25
         #road2.mp4 is cooked w/ this code (right railing interfering)
 
@@ -144,23 +151,60 @@ class Iris:
                 
             #5 frame moving average to reduce variance -> still not perfect -> straight line has 2 degrees off    
             self.previous_angles.append(self.angle)
-            if len(self.previous_angles) > 100:
+            if len(self.previous_angles) > 200:
                 self.previous_angles.pop(0)
             self.angle = sum(self.previous_angles) / len(self.previous_angles)
             
             cv2.putText(annotated_frame, f"Steering Angle: {self.steering_angle:.2f} deg", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-
+            
             cv2.imshow("Iris View", annotated_frame)
             cv2.waitKey(1)
+            #print("angle: inside", self.angle)
+            self.send_angle_update()
+            
+            
+            
         
 
     def get_steering_angle(self):
         return self.angle
     
+    def send_angle_update(self):
+        print('send counter', self.send_counter)
+        self.send_counter += 1
+        if self.send_counter % 10 != 0:
+            return
+
+        angle_sign_bit = 1 if self.steering_angle < 0 else 0
+        angle_magnitude = abs(self.steering_angle)
+
+        angle_int = math.floor(angle_magnitude * 10)  # Scale for resolution
+
+        # Moving average over angle_int 
+        self.previous_angle_ints.append(angle_int)
+        if len(self.previous_angle_ints) > 10:
+            self.previous_angle_ints.pop(0)
+        averaged_angle_int = round(sum(self.previous_angle_ints) / len(self.previous_angle_ints))
+        averaged_angle_int = min(averaged_angle_int, 63)  # Clamp to 6 bits
+
+        # Bit structure: 1 (MSB) | sign bit | 6-bit angle_int
+        bit_string = (1 << 7) | (angle_sign_bit << 6) | (averaged_angle_int & 0b111111)
+
+        # Debug prints
+        print('angle:', self.angle)
+        binary_str = format(bit_string, '08b')
+        print('magnitude scaled:', averaged_angle_int)
+        print("angle magnitude (from bits):", bit_string & 0b111111, "angle sign bit:", angle_sign_bit)
+        print("binary:", binary_str)
+        
+        # send to arduino
+        self.sender.send_data(bit_string)
+
+    
         
 def main():
-    video_path = fr'data\road.mp4'
+    video_path = "../data/road.mp4"
     iris = Iris(video_path)
     #iris._play_video()
     iris.update()
