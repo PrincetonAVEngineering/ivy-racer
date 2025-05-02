@@ -38,7 +38,7 @@ class ArduinoSender:
             self.send_data(byte_data)
 
 def main():
-    sender = ArduinoSender('/dev/tty.usbmodem1101')
+    sender = ArduinoSender('COM5')
     sender.connect()
     sender.interactive_input()
 
