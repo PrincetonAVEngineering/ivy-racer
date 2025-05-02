@@ -171,17 +171,22 @@ class Iris:
         return self.angle
     
     def send_angle_update(self):
-        print('send counter', self.send_counter)
         self.send_counter += 1
-        if self.send_counter % 10 != 0:
+        if self.send_counter % 2 != 0:
             return
 
         angle_sign_bit = 1 if self.steering_angle < 0 else 0
         angle_magnitude = abs(self.steering_angle)
-
         angle_int = math.floor(angle_magnitude * 10)  # Scale for resolution
 
-        # Moving average over angle_int 
+        # Compute current moving average before adding new value
+        if self.previous_angle_ints:
+            current_avg = sum(self.previous_angle_ints) / len(self.previous_angle_ints)
+            if abs(angle_int - current_avg) > 8:  # Disregard outliers (> 5 deg diff)
+                print(f"Ignored angle_int {angle_int} (diff > 5° from avg {current_avg})")
+                return
+
+        # Update moving average
         self.previous_angle_ints.append(angle_int)
         if len(self.previous_angle_ints) > 10:
             self.previous_angle_ints.pop(0)
@@ -197,9 +202,10 @@ class Iris:
         print('magnitude scaled:', averaged_angle_int)
         print("angle magnitude (from bits):", bit_string & 0b111111, "angle sign bit:", angle_sign_bit)
         print("binary:", binary_str)
-        
-        # send to arduino
+    
+    # send to arduino
         self.sender.send_data(bit_string)
+
 
     
         
