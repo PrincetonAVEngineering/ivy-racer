@@ -210,7 +210,7 @@ class Iris:
     
         
 def main():
-    video_path = "../data/road.mp4"
+    video_path = "data/road.mp4"
     iris = Iris(video_path)
     #iris._play_video()
     iris.update()

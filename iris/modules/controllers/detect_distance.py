@@ -61,8 +61,9 @@ def main():
 
             print(f"Center distance: {center_distance:.3f} meters")
 
-            throttle = int(max( min( center_distance * 10 , 20), 0))
-            throttle_byte = int(throttle).to_bytes(1, byteorder='big', signed=False)
+            throttle = int(max( min( (center_distance - 1.5) * 64 , 127), 0))
+            throttle_byte = int(throttle)
+            print(f"throttle: {throttle_byte}")
 
             sender.send_data(throttle_byte)
 

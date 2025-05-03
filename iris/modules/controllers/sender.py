@@ -18,6 +18,7 @@ class ArduinoSender:
 
     def send_data(self, byte_data):
         if self.serial_connection and self.serial_connection.is_open:
+            byte_data = byte_data.to_bytes(1, byteorder='big')
             self.serial_connection.write(byte_data)
             bit_string = format(ord(byte_data), '08b')
             print(f'Sent data: {bit_string}')
