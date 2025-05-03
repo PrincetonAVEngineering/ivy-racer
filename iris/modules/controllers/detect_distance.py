@@ -3,12 +3,15 @@ import numpy as np
 import cv2
 from sender import ArduinoSender
 import time
+import pickle
 
 def main():
     # Configure depth stream
     pipeline = rs.pipeline()
     config = rs.config()
     config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)  # <-- Add this line
+
 
     # Start streaming
     pipeline.start(config)
@@ -24,6 +27,21 @@ def main():
             if not depth_frame:
                 continue
 
+            # Save depth frame to a pickle file
+            with open('depth.pkl', 'wb') as depth_file:
+                depth_data = np.asanyarray(depth_frame.get_data())
+                pickle.dump(depth_data, depth_file)
+
+            
+            
+
+
+            # Save color frame to a pickle file (if available)
+            color_frame = frames.get_color_frame()
+            if color_frame:
+                with open('frame.pkl', 'wb') as color_file:
+                    color_data = np.asanyarray(color_frame.get_data())
+                    pickle.dump(color_data, color_file)
             # Convert depth frame to numpy array
             depth_image = np.asanyarray(depth_frame.get_data())
             # Display the depth frame using OpenCV
@@ -65,13 +83,29 @@ def main():
             throttle_byte = int(throttle)
             print(f"throttle: {throttle_byte}")
 
+            with open("turn.pkl", "rb") as d:
+                try:
+                    turn = pickle.load(d)
+                except:
+                    print("oops")
+            
+            turn = (int(turn) - 50)
+
+            print(f"turn: {turn}")
+
+            angle_sign_bit = int(turn < 0)
+            bit_string = (1 << 7) | (angle_sign_bit << 6) | (abs(turn) & 0b111111)
+
             sender.send_data(throttle_byte)
+            sender.send_data(bit_string)
+            time.sleep(0.1)
 
     except KeyboardInterrupt:
         print("Stopped by user.")
     finally:
         # Stop streaming
         pipeline.stop()
+        sender.disconnect()
 
 if __name__ == "__main__":
     main()

@@ -18,10 +18,16 @@ class ArduinoSender:
 
     def send_data(self, byte_data):
         if self.serial_connection and self.serial_connection.is_open:
-            byte_data = byte_data.to_bytes(1, byteorder='big')
-            self.serial_connection.write(byte_data)
-            bit_string = format(ord(byte_data), '08b')
-            print(f'Sent data: {bit_string}')
+            try:
+                # Ensure byte_data is an int 0-255
+                if not isinstance(byte_data, int):
+                    raise ValueError("byte_data must be an integer 0-255")
+                byte_to_send = byte_data.to_bytes(1, byteorder='big')
+                self.serial_connection.write(byte_to_send)
+                bit_string = format(byte_data, '08b')
+                print(f'Sent data: {bit_string}')
+            except Exception as e:
+                print(f"comms fail: {e}")
 
     def interactive_input(self):
         while True:
@@ -37,6 +43,14 @@ class ArduinoSender:
 
             byte_data = int(user_input, 2).to_bytes(1, byteorder='big')
             self.send_data(byte_data)
+
+    def disconnect(self):
+        
+        if self.serial_connection and self.serial_connection.is_open:
+            self.serial_connection.close()
+            print("Serial connection closed.")
+        else:
+            print("Serial connection was not open.")
 
 def main():
     sender = ArduinoSender('COM5')
