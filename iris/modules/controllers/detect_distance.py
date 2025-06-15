@@ -4,6 +4,7 @@ import cv2
 from sender import ArduinoSender
 import time
 import pickle
+import os
 
 def main():
     # Configure depth stream
@@ -77,28 +78,35 @@ def main():
             
             # center_distance = depth_frame.get_distance(width // 2, height // 2)
 
-            print(f"Center distance: {center_distance:.3f} meters")
+            # print(f"Center distance: {center_distance:.3f} meters")
 
             throttle = int(max( min( (center_distance - 1.5) * 64 , 127), 0))
             throttle_byte = int(throttle)
-            print(f"throttle: {throttle_byte}")
+            # print(f"throttle: {throttle_byte}")
 
-            with open("turn.pkl", "rb") as d:
-                try:
-                    turn = pickle.load(d)
-                except:
-                    print("oops")
+            import os
+            if os.path.exists("turn.pkl"):
+                with open("turn.pkl", "rb") as d:
+                    try:
+                        turn = pickle.load(d)
+                    except Exception as e:
+                        print("oops", e)
+            else:
+                print("turn.pkl not found")
+                continue  # or set a default value and continue
             
             turn = (int(turn) - 50)
 
-            print(f"turn: {turn}")
+            # print(f"turn: {turn}")
 
             angle_sign_bit = int(turn < 0)
             bit_string = (1 << 7) | (angle_sign_bit << 6) | (abs(turn) & 0b111111)
 
             sender.send_data(throttle_byte)
+            time.sleep(0.05)
             sender.send_data(bit_string)
-            time.sleep(0.1)
+            time.sleep(0.05)
+            
 
     except KeyboardInterrupt:
         print("Stopped by user.")

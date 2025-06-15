@@ -25,9 +25,12 @@ class ArduinoSender:
                 byte_to_send = byte_data.to_bytes(1, byteorder='big')
                 self.serial_connection.write(byte_to_send)
                 bit_string = format(byte_data, '08b')
-                print(f'Sent data: {bit_string}')
+                # print(f'Sent data: {bit_string}')
             except Exception as e:
                 print(f"comms fail: {e}")
+                self.disconnect()
+                time.sleep(0.1)
+                self.connect()
 
     def interactive_input(self):
         while True:

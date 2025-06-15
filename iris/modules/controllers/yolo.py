@@ -2,6 +2,10 @@ from ultralytics import YOLO
 import cv2
 import pickle
 import numpy as np
+import os
+import sys
+# Disable printing
+
 
 model = YOLO('yolov8n.pt')
 
@@ -38,6 +42,17 @@ def get_middle(bounding_box):
     return med_point
 
     
+def get_bounding_box_area(bounding_box):
+    # Calculate the area of a bounding box
+    box_coords = bounding_box.xyxy[0]
+    x_min, y_min, x_max, y_max = box_coords[0], box_coords[1], box_coords[2], box_coords[3]
+
+    width = x_max - x_min
+    height = y_max - y_min
+
+    area = width * height
+    return area
+
 def sample_depth_coord(x, y, depth_frame):
     return depth_frame[x][y]
 
@@ -55,7 +70,7 @@ while True:
         width = masked_color_image.shape[0]
        
         number_of_people = get_number_of_obj(results[0])
-        print("Number of people detected: ", number_of_people, "\n")
+        # print("Number of people detected: ", number_of_people, "\n")
         
         # print(annotated_frame)
         white_listed = []
@@ -69,12 +84,14 @@ while True:
             if sample_depth_coord(x_mid, y_mid, depth_frame=depth_image) <= 2.0 or True:
                 white_listed.append(bounding_box)
                 
-        
+        white_listed = sorted(white_listed, key = lambda x: get_bounding_box_area(x))
         
         results[0].boxes = white_listed
 
-        annotated_frame = results[0].plot()
+        # annotated_frame = results[0].plot()
 
+        # Scale the frame to a smaller size for display
+       
         person_box = white_listed[0]
 
         if person_box:
@@ -83,7 +100,7 @@ while True:
             with open('turn.pkl', 'wb') as depth_file:
                 pickle.dump(percent, depth_file)
 
-        cv2.imshow("YOLO Real-time Detection", annotated_frame)
+        # cv2.imshow("YOLO Real-time Detection", annotated_frame)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

@@ -247,7 +247,7 @@ def get_lines_from_frame(frame):
     roi = sobel_x
 
     # Hough Transform to detect lines
-    lines = cv2.HoughLinesP(roi, 1, np.pi / 180, threshold=30, minLineLength=50, maxLineGap=100)
+    lines = cv2.HoughLinesP(roi, 1, np.pi / 180, threshold=20, minLineLength=50, maxLineGap=100)
 
     """
     while not lines is None:

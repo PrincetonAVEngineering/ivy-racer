@@ -6,7 +6,7 @@ Outputs: a target steering angle.
 
 from  roaddetection_angular import get_lines_from_frame
 import cv2
-from modules.controllers.sender import ArduinoSender
+# from modules.controllers.sender import ArduinoSender
 import math
 import time
 
@@ -20,8 +20,8 @@ class Iris:
         self.cooked_counter = 0
         self.previous_angles = []
         self.angle_bias = 35 #bias term just in case camera isn't centered (in pixels)
-        self.sender = ArduinoSender("COM5")
-        self.sender.connect()
+        # self.sender = ArduinoSender("COM5")
+        # self.sender.connect()
         self.send_counter = 0
         self.previous_angle_ints = []
         #bias term for road.mp4 is 25
@@ -161,7 +161,7 @@ class Iris:
             cv2.imshow("Iris View", annotated_frame)
             cv2.waitKey(1)
             #print("angle: inside", self.angle)
-            self.send_angle_update()
+            # self.send_angle_update()
             
             
             
@@ -170,7 +170,7 @@ class Iris:
     def get_steering_angle(self):
         return self.angle
     
-    def send_angle_update(self):
+    """def send_angle_update(self):
         self.send_counter += 1
         if self.send_counter % 2 != 0:
             return
@@ -205,12 +205,12 @@ class Iris:
     
     # send to arduino
         self.sender.send_data(bit_string)
-
+"""
 
     
         
 def main():
-    video_path = "data/road.mp4"
+    video_path = "../data/road.mp4"
     iris = Iris(video_path)
     #iris._play_video()
     iris.update()
